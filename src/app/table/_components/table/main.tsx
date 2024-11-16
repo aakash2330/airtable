@@ -9,12 +9,16 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { ColumnDef, Row, SortingState } from "@tanstack/react-table";
-import { makeData, type Person } from "./mock-table-data";
+import { makeData, type BaseTableData } from "./mock-table-data";
 
-export function ReactTableVirtualized({ tableData }: { tableData: Person[] }) {
+export function ReactTableVirtualized({
+  tableData,
+}: {
+  tableData: BaseTableData[];
+}) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const columns = React.useMemo<Array<ColumnDef<Person>>>(
+  const columns = React.useMemo<Array<ColumnDef<BaseTableData>>>(
     () => [
       {
         accessorKey: "id",
@@ -22,38 +26,20 @@ export function ReactTableVirtualized({ tableData }: { tableData: Person[] }) {
         size: 60,
       },
       {
-        accessorKey: "firstName",
+        accessorKey: "task",
+        header: () => "Task",
         cell: (info) => info.getValue(),
       },
       {
-        accessorFn: (row) => row.lastName,
-        id: "lastName",
+        accessorFn: (row) => row.description,
+        id: "description",
         cell: (info) => info.getValue(),
-        header: () => <span>Last Name</span>,
+        header: () => <span>Description</span>,
       },
       {
-        accessorKey: "age",
-        header: () => "Age",
+        accessorKey: "asignee",
+        header: () => "Asignee",
         size: 50,
-      },
-      {
-        accessorKey: "visits",
-        header: () => <span>Visits</span>,
-        size: 50,
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-      },
-      {
-        accessorKey: "progress",
-        header: "Profile Progress",
-        size: 80,
-      },
-      {
-        accessorKey: "createdAt",
-        header: "Created At",
-        cell: (info) => info.getValue<Date>().toLocaleString(),
       },
     ],
     [],

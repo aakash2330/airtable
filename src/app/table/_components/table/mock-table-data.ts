@@ -1,14 +1,10 @@
 import { faker } from "@faker-js/faker";
 
-export type Person = {
+export type BaseTableData = {
   id: number;
-  firstName: string;
-  lastName: string;
-  age: number;
-  visits: number;
-  progress: number;
-  status: "relationship" | "complicated" | "single";
-  createdAt: Date;
+  task: string;
+  description: string;
+  asignee: string;
 };
 
 const range = (len: number) => {
@@ -19,27 +15,19 @@ const range = (len: number) => {
   return arr;
 };
 
-const newPerson = (index: number): Person => {
+const newPerson = (index: number): BaseTableData => {
   return {
     id: index + 1,
-    firstName: faker.person.firstName(), // Generates a random first name
-    lastName: faker.person.lastName(), // Generates a random last name
-    age: faker.number.int({ max: 40 }), // Generates an age up to 40
-    visits: faker.number.int({ max: 1000 }), // Generates visits up to 1000
-    progress: faker.number.int({ max: 100 }), // Generates progress percentage up to 100
-    createdAt: faker.date.past(), // Generates a random past date
-    status: faker.helpers.arrayElement([
-      "relationship",
-      "complicated",
-      "single",
-    ]), // Picks a random status
+    task: faker.person.firstName(), // Generates a random first name
+    description: faker.person.lastName(), // Generates a random last name
+    asignee: faker.person.lastName(), // Generates a random last name
   };
 };
 
 export function makeData(...lens: number[]) {
-  const makeDataLevel = (depth = 0): Person[] => {
+  const makeDataLevel = (depth = 0): BaseTableData[] => {
     const len = lens[depth]!;
-    return range(len).map((d): Person => {
+    return range(len).map((d): BaseTableData => {
       return {
         ...newPerson(d),
       };
