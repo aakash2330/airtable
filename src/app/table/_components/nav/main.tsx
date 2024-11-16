@@ -25,7 +25,7 @@ export function TableNavMain() {
 function NavItem({ item }: { item: { render: JSX.Element } }) {
   return (
     <div>
-      <div className="rounded-full text-[13px] font-light hover:text-neutral-200">
+      <div className="rounded-full text-main font-light hover:text-neutral-200">
         {item.render}
       </div>
     </div>

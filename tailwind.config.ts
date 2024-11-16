@@ -12,6 +12,9 @@ export default {
       fontWeight: {
         strongest: "530",
       },
+      fontSize: {
+        main: "13px",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
