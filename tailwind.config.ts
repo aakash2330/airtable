@@ -10,7 +10,7 @@ export default {
         sans: ["var(--font-geist-sans)", ...fontFamily.sans],
       },
       fontWeight: {
-        strongest: "675",
+        strongest: "530",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -20,6 +20,8 @@ export default {
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        "table-primary": "var(--table-primary)",
+        "table-secondary": "var(--table-secondary)",
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
