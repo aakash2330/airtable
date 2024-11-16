@@ -1,6 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { auth } from "@/server/auth";
 import { HydrateClient } from "@/trpc/server";
 import Link from "next/link";
+import { MoveRight } from "lucide-react";
 
 export default async function Home() {
   const session = await auth();
@@ -18,6 +20,12 @@ export default async function Home() {
           >
             {session ? "Sign out" : "Sign in"}
           </Link>
+          <div className="flex items-center justify-center gap-5">
+            <Button>
+              <Link href={"/table"}>Demo</Link>
+            </Button>
+            <MoveRight></MoveRight>
+          </div>
         </div>
       </main>
     </HydrateClient>
