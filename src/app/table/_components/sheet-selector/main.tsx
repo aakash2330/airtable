@@ -39,7 +39,7 @@ export function SheetSelectorSection() {
                 `flex h-full items-center justify-center gap-2 hover:bg-[#b3072f]`,
 
                 searchParams.get("sheet") == item.id
-                  ? "bg-white hover:bg-white hover:text-black"
+                  ? "-rounded-b-md h-[115%] rounded-sm bg-white hover:bg-white hover:text-black"
                   : "",
               )}
             >
@@ -97,7 +97,7 @@ export function SheetSelectorTab({
       className={cn(
         `flex h-full ${size == "sm" ? "w-12" : "w-16"} items-center justify-center text-[13px] text-neutral-200 hover:cursor-pointer hover:bg-[#b3072f]`,
         searchParams.get("sheet") == item.id
-          ? "bg-white text-black hover:bg-white hover:text-black"
+          ? "rounded-sm bg-white text-black hover:bg-white hover:text-black"
           : "",
       )}
     >
