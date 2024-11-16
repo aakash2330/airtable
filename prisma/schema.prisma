@@ -72,3 +72,22 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// workspace
+model Base {
+  id     String      @id @default(cuid())
+  name   String?
+  tables BaseTable[]
+}
+
+// table entity
+model BaseTable {
+  id     String  @id @default(cuid())
+  name   String?
+  Base   Base?   @relation(fields: [baseId], references: [id])
+  baseId String?
+}
+
+model BaseTableData {
+  id String @id @default(cuid())
+}
