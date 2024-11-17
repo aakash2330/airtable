@@ -18,11 +18,16 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:seed": "npx prisma db push && node --import 'data:text/javascript,import { register } from \"node:module\"; import { pathToFileURL } from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "node --import 'data:text/javascript,import { register } from \"node:module\"; import { pathToFileURL } from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' prisma/seed.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
     "@prisma/client": "^5.14.0",
+    "@radix-ui/react-checkbox": "^1.1.2",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
@@ -41,6 +46,7 @@
     "next-auth": "5.0.0-beta.25",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-resizable-panels": "^2.1.7",
     "server-only": "^0.0.1",
     "superjson": "^2.2.1",
     "tailwind-merge": "^2.5.4",
@@ -48,6 +54,7 @@
     "zod": "^3.23.3"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
     "@faker-js/faker": "^9.2.0",
     "@types/eslint": "^8.56.10",
     "@types/node": "^20.14.10",

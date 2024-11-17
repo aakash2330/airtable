@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 
 export type BaseTableData = {
-  id: number;
   task: string;
   description: string;
   asignee: string;
@@ -17,7 +16,6 @@ const range = (len: number) => {
 
 const newPerson = (index: number): BaseTableData => {
   return {
-    id: index + 1,
     task: faker.person.firstName(), // Generates a random first name
     description: faker.person.lastName(), // Generates a random last name
     asignee: faker.person.lastName(), // Generates a random last name

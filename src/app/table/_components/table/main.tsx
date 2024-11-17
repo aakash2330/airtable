@@ -8,8 +8,35 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { ColumnDef, Row, SortingState } from "@tanstack/react-table";
-import { makeData, type BaseTableData } from "./mock-table-data";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { type BaseTableData } from "./mock-table-data";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const defaultColumn: Partial<ColumnDef<BaseTableData>> = {
+  cell: ({ getValue, row: { index }, column: { id }, table }) => {
+    const initialValue = getValue();
+    // We need to keep and update the state of the cell normally
+    const [value, setValue] = React.useState(initialValue);
+
+    // When the input is blurred, we'll call our table meta's updateData function
+    const onBlur = () => {
+      table.options.meta?.updateData(index, id, value);
+    };
+
+    // If the initialValue is changed external, sync it up with our state
+    React.useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    return (
+      <input
+        value={value as string}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onBlur}
+      />
+    );
+  },
+};
 
 export function ReactTableVirtualized({
   tableData,
@@ -22,24 +49,14 @@ export function ReactTableVirtualized({
     () => [
       {
         accessorKey: "id",
-        header: "ID",
-        size: 60,
+        header: () => <Checkbox />,
+        cell: (info) => {
+          return info.row.index + 1;
+        },
       },
       {
         accessorKey: "task",
-        header: () => "Task",
-        cell: (info) => info.getValue(),
-      },
-      {
-        accessorFn: (row) => row.description,
-        id: "description",
-        cell: (info) => info.getValue(),
-        header: () => <span>Description</span>,
-      },
-      {
-        accessorKey: "asignee",
-        header: () => "Asignee",
-        size: 50,
+        header: () => "task",
       },
     ],
     [],
@@ -47,12 +64,15 @@ export function ReactTableVirtualized({
 
   const [data, setData] = React.useState(tableData);
 
+  console.log({ data });
+
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
     },
+    defaultColumn,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -80,6 +100,7 @@ export function ReactTableVirtualized({
                 {headerGroup.headers.map((header) => {
                   return (
                     <th
+                      className="border-[1px] text-left"
                       key={header.id}
                       colSpan={header.colSpan}
                       style={{ width: header.getSize() }}
@@ -124,7 +145,7 @@ export function ReactTableVirtualized({
                 >
                   {row?.getVisibleCells().map((cell) => {
                     return (
-                      <td key={cell.id}>
+                      <td key={cell.id} className="border-[1px]">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),

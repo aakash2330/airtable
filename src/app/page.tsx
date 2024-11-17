@@ -3,6 +3,7 @@ import { auth } from "@/server/auth";
 import { HydrateClient } from "@/trpc/server";
 import Link from "next/link";
 import { MoveRight } from "lucide-react";
+import { WorkspaceList } from "./_components/workspace/list/main";
 
 export default async function Home() {
   const session = await auth();
@@ -27,6 +28,7 @@ export default async function Home() {
             <MoveRight></MoveRight>
           </div>
         </div>
+        <WorkspaceList></WorkspaceList>
       </main>
     </HydrateClient>
   );

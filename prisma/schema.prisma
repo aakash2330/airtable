@@ -55,14 +55,15 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String      @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?     @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
   posts         Post[]
+  workspaces    Workspace[]
 }
 
 model VerificationToken {
@@ -73,21 +74,55 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// workspace
-model Base {
-  id     String      @id @default(cuid())
-  name   String?
-  tables BaseTable[]
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tables    Table[]
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
 }
 
-// table entity
-model BaseTable {
-  id     String  @id @default(cuid())
-  name   String?
-  Base   Base?   @relation(fields: [baseId], references: [id])
-  baseId String?
+model Table {
+  id          String    @id @default(cuid())
+  name        String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  columns     Column[]
+  rows        Row[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
-model BaseTableData {
-  id String @id @default(cuid())
+model Column {
+  id        String   @id @default(cuid())
+  name      String
+  tableId   String
+  table     Table    @relation(fields: [tableId], references: [id])
+  dataType  String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Cell      Cell[]
+}
+
+model Row {
+  id        String   @id @default(cuid())
+  tableId   String
+  table     Table    @relation(fields: [tableId], references: [id])
+  cells     Cell[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cell {
+  id        String   @id @default(cuid())
+  rowId     String
+  row       Row      @relation(fields: [rowId], references: [id])
+  columnId  String
+  column    Column   @relation(fields: [columnId], references: [id])
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
