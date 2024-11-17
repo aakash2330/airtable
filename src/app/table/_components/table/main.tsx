@@ -57,6 +57,13 @@ export function ReactTableVirtualized({
       {
         accessorKey: "task",
         header: () => "task",
+        size: 80,
+      },
+
+      {
+        accessorKey: "hello",
+        header: () => "hello",
+        size: 80,
       },
     ],
     [],
@@ -75,8 +82,12 @@ export function ReactTableVirtualized({
     defaultColumn,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    enableColumnResizing: true,
+    columnResizeMode: "onChange",
     getSortedRowModel: getSortedRowModel(),
     debugTable: true,
+    debugHeaders: true,
+    debugColumns: true,
   });
 
   const { rows } = table.getRowModel();
@@ -100,7 +111,7 @@ export function ReactTableVirtualized({
                 {headerGroup.headers.map((header) => {
                   return (
                     <th
-                      className="border-[1px] text-left"
+                      className="border-[1px] bg-neutral-100 text-left"
                       key={header.id}
                       colSpan={header.colSpan}
                       style={{ width: header.getSize() }}
@@ -135,6 +146,7 @@ export function ReactTableVirtualized({
               const row = rows[virtualRow.index];
               return (
                 <tr
+                  className="border-[1px]"
                   key={row?.id}
                   style={{
                     height: `${virtualRow.size}px`,
