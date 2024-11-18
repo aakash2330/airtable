@@ -30,6 +30,7 @@ const defaultColumn: Partial<ColumnDef<BaseTableData>> = {
 
     return (
       <input
+        className="focus-visible:outline-none"
         value={value as string}
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
@@ -49,7 +50,7 @@ export function ReactTableVirtualized({
     () => [
       {
         accessorKey: "id",
-        header: () => <Checkbox />,
+        header: () => <Checkbox className="rounded-none" />,
         cell: (info) => {
           return info.row.index + 1;
         },
@@ -111,7 +112,7 @@ export function ReactTableVirtualized({
                 {headerGroup.headers.map((header) => {
                   return (
                     <th
-                      className="border-[1px] bg-neutral-100 text-left"
+                      className="border-[1px] bg-neutral-100 p-2 text-left"
                       key={header.id}
                       colSpan={header.colSpan}
                       style={{ width: header.getSize() }}
@@ -157,7 +158,7 @@ export function ReactTableVirtualized({
                 >
                   {row?.getVisibleCells().map((cell) => {
                     return (
-                      <td key={cell.id} className="border-[1px]">
+                      <td key={cell.id} className="border-[1px] p-2">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),

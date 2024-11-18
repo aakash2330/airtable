@@ -8,13 +8,15 @@ export default function Layout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div>
-      <TableNavMain></TableNavMain>
+    <div className="flex h-screen flex-col ">
+      <TableNavMain />
       <Suspense>
-        <SheetSelectorSection></SheetSelectorSection>
+        <SheetSelectorSection />
       </Suspense>
-      <OptionsMenu></OptionsMenu>
-      <ResizableDemo>{children}</ResizableDemo>
+      <OptionsMenu />
+      <div className="flex-1">
+        <ResizableDemo>{children}</ResizableDemo>
+      </div>
     </div>
   );
 }

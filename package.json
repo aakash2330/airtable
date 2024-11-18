@@ -28,6 +28,7 @@
     "@auth/prisma-adapter": "^2.7.2",
     "@prisma/client": "^5.14.0",
     "@radix-ui/react-checkbox": "^1.1.2",
+    "@radix-ui/react-collapsible": "^1.1.1",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
@@ -54,7 +55,6 @@
     "zod": "^3.23.3"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
     "@faker-js/faker": "^9.2.0",
     "@types/eslint": "^8.56.10",
     "@types/node": "^20.14.10",
@@ -69,6 +69,7 @@
     "prettier-plugin-tailwindcss": "^0.6.5",
     "prisma": "^5.14.0",
     "tailwindcss": "^3.4.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.5.3"
   },
   "ct3aMetadata": {
