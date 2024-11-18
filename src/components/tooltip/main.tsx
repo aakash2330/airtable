@@ -9,6 +9,7 @@ export function ToolTipMain(item: {
   content: JSX.Element;
   title: JSX.Element;
   className?: string;
+  side?: "bottom" | "right" | "left" | "top";
 }) {
   return (
     <Tooltip>
@@ -17,7 +18,9 @@ export function ToolTipMain(item: {
       >
         {item.title}
       </TooltipTrigger>
-      <TooltipContent>{item.content}</TooltipContent>
+      <TooltipContent side={item.side ? item.side : "bottom"}>
+        {item.content}
+      </TooltipContent>
     </Tooltip>
   );
 }

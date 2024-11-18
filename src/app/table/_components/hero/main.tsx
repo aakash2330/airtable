@@ -12,10 +12,8 @@ export function ResizableDemo({ children }: { children: React.ReactNode }) {
         <TableSidebar></TableSidebar>
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel defaultSize={77}>
-        <div className="flex h-full w-full overflow-scroll border-t-[1px]">
-          {children}
-        </div>
+      <ResizablePanel className="h-full" defaultSize={77}>
+        <div className="flex h-full w-full border-t-[1px]">{children}</div>
       </ResizablePanel>
     </ResizablePanelGroup>
   );
