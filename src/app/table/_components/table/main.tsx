@@ -1,7 +1,5 @@
 "use client";
 
-//TODO: dont keep a million rows inside memory even with infinite scrolling keep deleting the rows that have not been in view for a while
-
 import * as React from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -12,23 +10,28 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical, Maximize2, Plus } from "lucide-react";
+import { GripVertical, Maximize2 } from "lucide-react";
+import { AddColumn } from "./column/add";
+import { AddRow } from "./row/add";
+import { api } from "@/trpc/react";
+import { type CellData } from "@/validators/table";
 
-const defaultColumn: Partial<ColumnDef<Record<string, string>[]>> = {
-  cell: ({ getValue, row: { index }, column: { id }, table }) => {
-    const initialValue = getValue();
-    // We need to keep and update the state of the cell normally
-    // FIX:
+const defaultColumn: Partial<ColumnDef<Record<string, CellData>>> = {
+  cell: ({ getValue, cell, table }) => {
+    const cellData = getValue() as { value: string; cellId: string };
+    const initialValue = cellData.value;
+
     // eslint-disable-next-line
     const [value, setValue] = React.useState(initialValue);
 
-    // When the input is blurred, we'll call our table meta's updateData function
+    const rowIndex = cell.row.index;
+    const columnId = cell.column.id;
+
     const onBlur = () => {
-      table.options.meta?.updateData(index, id, value);
+      table.options.meta?.updateData(rowIndex, columnId, value);
     };
 
-    // If the initialValue is changed external, sync it up with our state
-    // FIX:
+    // Sync state if initialValue changes
     // eslint-disable-next-line
     React.useEffect(() => {
       setValue(initialValue);
@@ -37,8 +40,10 @@ const defaultColumn: Partial<ColumnDef<Record<string, string>[]>> = {
     return (
       <input
         className="bg-transparent focus-visible:outline-none"
-        value={value as string}
-        onChange={(e) => setValue(e.target.value)}
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
         onBlur={onBlur}
       />
     );
@@ -46,11 +51,13 @@ const defaultColumn: Partial<ColumnDef<Record<string, string>[]>> = {
 };
 
 export function ReactTableVirtualized({
+  tableId,
   tableData,
   columnsData,
 }: {
-  tableData: Record<string, string>[];
-  columnsData: Array<ColumnDef<Record<string, string>[]>>;
+  tableData: Record<string, CellData>[];
+  columnsData: Array<ColumnDef<Record<string, CellData>>>;
+  tableId: string;
 }) {
   const [columns, setColumns] = React.useState(columnsData);
   const [data, setData] = React.useState(tableData);
@@ -60,24 +67,61 @@ export function ReactTableVirtualized({
     null,
   );
 
+  const updateCellMutation = api.table.updateCell.useMutation();
+
+  //TODO: heavy lodashing here
+  const updateData = (rowIndex: number, columnId: string, value: unknown) => {
+    const rowData = data[rowIndex];
+
+    if (!rowData) {
+      return;
+    }
+
+    const cellData = rowData[columnId];
+
+    if (!cellData) {
+      console.error(
+        `Cell data is undefined for column '${columnId}' at row ${rowIndex}`,
+      );
+      return;
+    }
+
+    const cellId = cellData.cellId;
+
+    setData((oldData) =>
+      oldData.map((row, index) => {
+        if (index !== rowIndex) return row;
+
+        const updatedCellData: CellData = {
+          cellId: cellData.cellId,
+          value: value as string,
+        };
+
+        return {
+          ...row,
+          [columnId]: updatedCellData,
+        };
+      }),
+    );
+
+    // Update the cell in db
+    updateCellMutation.mutate({ cellId, value: value as string });
+  };
+
   const table = useReactTable({
-    //FIX: type error below
     data,
     columns,
-    state: {
-      sorting,
-    },
+    state: { sorting },
     defaultColumn,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     enableColumnResizing: true,
     columnResizeMode: "onChange",
     getSortedRowModel: getSortedRowModel(),
-    debugTable: true,
-    debugHeaders: true,
-    debugColumns: true,
+    meta: {
+      updateData,
+    },
   });
-
   const { rows } = table.getRowModel();
 
   const parentRef = React.useRef<HTMLDivElement>(null);
@@ -119,24 +163,11 @@ export function ReactTableVirtualized({
                   );
                 })}
                 <th className="border-b-[1px] border-r-[1px] hover:cursor-pointer hover:bg-white">
-                  <div
-                    onClick={() => {
-                      setColumns((prev) => {
-                        // add new column
-                        return [
-                          ...prev,
-                          {
-                            accessorKey: "Task",
-                            header: "Task",
-                            size: 200,
-                          },
-                        ];
-                      });
-                    }}
-                    className="flex w-full min-w-20 items-center justify-center"
-                  >
-                    <Plus size={18} strokeWidth={1}></Plus>
-                  </div>
+                  <AddColumn
+                    tableId={tableId}
+                    columns={columns}
+                    setColumns={setColumns}
+                  ></AddColumn>
                 </th>
                 <th className="w-full border-b-[1px] bg-white"></th>
               </tr>
@@ -206,35 +237,11 @@ export function ReactTableVirtualized({
                 </tr>
               );
             })}
-            <tr
-              onClick={() => {
-                const newRow = columns.reduce((acc, item) => {
-                  acc[item.accessorKey] = "";
-                  return acc;
-                }, {});
-
-                setData((prev) => {
-                  console.log({ prev });
-                  // add new column
-                  return [...prev, newRow];
-                });
-              }}
-              className="h-8 hover:cursor-pointer hover:bg-neutral-100"
-            >
-              <td className="border-b-[1px]">
-                <div className="pl-1">
-                  <Plus size={18} strokeWidth={1}></Plus>
-                </div>
-              </td>
-              {new Array(columns.length).fill(null).map((item, index) => {
-                return (
-                  <td
-                    className={`border-y-[1px] ${index == columns.length - 1 ? "border-r-[1px]" : ""}`}
-                    key={index}
-                  ></td>
-                );
-              })}
-            </tr>
+            <AddRow
+              columns={columns}
+              setData={setData}
+              tableId={tableId}
+            ></AddRow>
           </tbody>
         </table>
       </div>

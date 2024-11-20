@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import TablePage from "../_components/table/table-page";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page({
   searchParams,
 }: {
@@ -9,7 +11,7 @@ export default async function Page({
   return (
     //TODO:parse the query-params here
     <Suspense
-      key={JSON.stringify(await searchParams)}
+      key={Math.random()}
       fallback={<p>Loading Table...</p>}
     >
       <TablePage searchParams={searchParams}></TablePage>

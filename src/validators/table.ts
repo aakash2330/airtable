@@ -6,3 +6,9 @@ export type TtableWithRowsAndColumns = Prisma.TableGetPayload<{
     columns: true;
   };
 }>;
+
+
+export type CellData = {
+  value: string;
+  cellId: string;
+};
