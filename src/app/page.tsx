@@ -4,13 +4,14 @@ import { HydrateClient } from "@/trpc/server";
 import Link from "next/link";
 import { MoveRight } from "lucide-react";
 import { WorkspaceList } from "./_components/workspace/list/main";
+import { CreateWorksheet } from "./_components/workspace/create/main";
 
 export default async function Home() {
   const session = await auth();
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center text-black">
+      <main className="flex min-h-screen flex-col items-center justify-center gap-5 text-black">
         <div className="flex flex-col items-center justify-center gap-4">
           <p className="text-center text-2xl text-white">
             {session && <span>Logged in as {session.user?.name}</span>}
@@ -29,6 +30,9 @@ export default async function Home() {
           </div>
         </div>
         <WorkspaceList></WorkspaceList>
+        <div>
+          <CreateWorksheet></CreateWorksheet>
+        </div>
       </main>
     </HydrateClient>
   );

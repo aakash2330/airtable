@@ -7,19 +7,23 @@ export async function WorkspaceList() {
   const session = await auth();
   if (session) {
     const allWorkspacesList = await api.workspace.getAllWorkspacesList();
-    console.log({ allWorkspacesList });
     return (
       <div>
+        Your Workspaces
         {allWorkspacesList.map((workspace) => {
           return (
             <Button key={workspace.id}>
-              <Link href={`/table/${workspace.id}`}>{workspace.name}</Link>
+              <Link
+                href={`/table/${workspace.id}?${!!workspace.tables.length ? "sheet=" + workspace.tables[0]?.id : ""}`}
+              >
+                {workspace.name}
+              </Link>
             </Button>
           );
         })}
       </div>
     );
   } else {
-    return <div>sdasd</div>;
+    return <div>please login to see your workspaces</div>;
   }
 }

@@ -12,7 +12,15 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical, Maximize2, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Maximize2,
+  Plus,
+} from "lucide-react";
+import { type Workspace } from "@prisma/client";
+import { type TtableWithRowsAndColumns } from "@/validators/table";
 
 const defaultColumn: Partial<ColumnDef<Record<string, string>[]>> = {
   cell: ({ getValue, row: { index }, column: { id }, table }) => {
@@ -53,12 +61,12 @@ export function ReactTableVirtualized({
   columnsData: Array<ColumnDef<Record<string, string>[]>>;
 }) {
   const [columns, setColumns] = React.useState(columnsData);
-  const [data, setData] = React.useState(tableData);
-
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [hoveredRowIndex, setHoveredRowIndex] = React.useState<number | null>(
     null,
   );
+
+  const [data, setData] = React.useState(tableData);
 
   const table = useReactTable({
     //FIX: type error below
@@ -123,14 +131,7 @@ export function ReactTableVirtualized({
                     onClick={() => {
                       setColumns((prev) => {
                         // add new column
-                        return [
-                          ...prev,
-                          {
-                            accessorKey: "Task",
-                            header: "Task",
-                            size: 200,
-                          },
-                        ];
+                        return prev;
                       });
                     }}
                     className="flex w-full min-w-20 items-center justify-center"
@@ -206,21 +207,7 @@ export function ReactTableVirtualized({
                 </tr>
               );
             })}
-            <tr
-              onClick={() => {
-                const newRow = columns.reduce((acc, item) => {
-                  acc[item.accessorKey] = "";
-                  return acc;
-                }, {});
-
-                setData((prev) => {
-                  console.log({ prev });
-                  // add new column
-                  return [...prev, newRow];
-                });
-              }}
-              className="h-8 hover:cursor-pointer hover:bg-neutral-100"
-            >
+            <tr className="h-8 hover:cursor-pointer hover:bg-neutral-100">
               <td className="border-b-[1px]">
                 <div className="pl-1">
                   <Plus size={18} strokeWidth={1}></Plus>

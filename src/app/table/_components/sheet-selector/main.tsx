@@ -2,16 +2,13 @@
 
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Plus } from "lucide-react";
+import { api } from "@/trpc/react";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-
-const sheetsData = [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }].map(
-  (sheet) => ({
-    id: sheet.id,
-    render: <Link href={`/table?sheet=${sheet.id}`}>{`sheet${sheet.id}`}</Link>,
-  }),
-);
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AddTableDropdown } from "./_components/table/add";
+import useSetQueryParams from "@/hooks/useSetQueryParams";
 
 const sheetsDataOptions = [
   { id: "sheet-data-option-1", render: <p>Extensions</p> },
@@ -28,10 +25,38 @@ const sheetsDataOptions = [
 
 export function SheetSelectorSection() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const setQueryParams = useSetQueryParams();
+
+  const { data: workspaceTables, refetch } =
+    api.workspace.getWorksheetTablesById.useQuery(
+      { workspaceId },
+      {
+        enabled: !!workspaceId,
+      },
+    );
+
+  useEffect(() => {
+    const workspaceId = pathname.split("/")[2];
+    if (workspaceId) {
+      setWorkspaceId(workspaceId);
+      refetch()
+        .then(() => {
+          console.log("refetched");
+        })
+        .catch(() => {
+          console.log("error during refetch");
+        });
+    }
+  }, [pathname, refetch]);
   return (
     <div className="flex h-8 justify-between gap-2 bg-table-primary">
       <div className="flex h-full flex-1 items-center justify-start rounded-md bg-table-secondary pl-4">
-        {sheetsData.map((item) => {
+        {/* 
+           TODO: Add loading skeleton here
+           * */
+        workspaceTables?.data.tables.map((item) => {
           return (
             <div
               key={item.id}
@@ -43,7 +68,20 @@ export function SheetSelectorSection() {
                   : "",
               )}
             >
-              <SheetSelectorTab item={item}></SheetSelectorTab>
+              <SheetSelectorTab
+                item={{
+                  id: item.id,
+                  render: (
+                    <div
+                      onClick={() => {
+                        setQueryParams({ sheet: item.id });
+                      }}
+                    >
+                      {item.name}
+                    </div>
+                  ),
+                }}
+              ></SheetSelectorTab>
               <Separator
                 className="h-3 bg-neutral-100/15"
                 orientation="vertical"
@@ -65,7 +103,9 @@ export function SheetSelectorSection() {
         <SheetSelectorTab
           size="sm"
           item={{
-            render: <Plus className="size-4 font-light" strokeWidth={1.5} />,
+            render: (
+              <AddTableDropdown workspaceId={workspaceId}></AddTableDropdown>
+            ),
             id: "plus",
           }}
         ></SheetSelectorTab>

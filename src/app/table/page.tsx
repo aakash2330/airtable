@@ -1,7 +1,4 @@
-import { ReactTableVirtualized } from "./_components/table/main";
-import { makeData } from "./_components/table/mock-table-data";
-
 export default function Page() {
-  const data = makeData(3);
-  return <ReactTableVirtualized tableData={data}></ReactTableVirtualized>;
+  //FIX: this should redirect to "/"
+  return <div>Nothing to see here / select a table to see its workspaces</div>;
 }

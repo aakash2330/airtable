@@ -1,10 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowUpDown,
   ChevronDown,
   ExternalLink,
   EyeOff,
+  ListFilter,
   ListOrdered,
   Logs,
   PaintBucket,
@@ -68,7 +74,26 @@ export const optionsMenuData = [
 
   {
     id: "option-menu-item-4",
-    render: <OptionsMenuDropdown></OptionsMenuDropdown>,
+    render: (
+      <OptionsMenuDropdown
+        title={
+          <>
+            <ListFilter size={14} strokeWidth={1.5}></ListFilter>
+            Filter
+          </>
+        }
+        content={
+          <>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Billing</DropdownMenuItem>
+            <DropdownMenuItem>Team</DropdownMenuItem>
+            <DropdownMenuItem>Subscription</DropdownMenuItem>
+          </>
+        }
+      ></OptionsMenuDropdown>
+    ),
   },
   {
     id: "option-menu-item-5",
