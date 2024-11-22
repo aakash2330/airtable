@@ -393,7 +393,7 @@ export function ReactTableVirtualizedInfinite({
           </tbody>
         </table>
       </div>
-      {isFetching && <div>Fetching Data ...</div>}
+      {isFetching && <div className="text-xs">Fetching Data ...</div>}
     </div>
   );
 }
