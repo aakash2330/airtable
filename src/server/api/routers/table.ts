@@ -186,7 +186,7 @@ export const tableRouter = createTRPCRouter({
 
           const createdRows = [];
 
-          for (let i = 0; i < 1000; i++) {
+          for (let i = 0; i < 10000; i++) {
             // Create a row
             const createdRow = await prisma.row.create({
               data: {
