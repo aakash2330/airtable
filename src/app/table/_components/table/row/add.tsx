@@ -1,7 +1,7 @@
-import { clearCache } from "@/app/actions/clear-cache";
 import { api } from "@/trpc/react";
 import { type CellData } from "@/validators/table";
 import { type ColumnDef } from "@tanstack/react-table";
+import _ from "lodash";
 import { Plus } from "lucide-react";
 
 export function AddRow({
@@ -15,39 +15,58 @@ export function AddRow({
 }) {
   const utils = api.useUtils();
   const addRowMutation = api.table.addRowToTable.useMutation({
-    onSuccess: async ({ data: { addedRow } }) => {
-      if (!addedRow) {
-        alert("column creation failed");
+    onSuccess: async ({ data: { transactionData } }) => {
+      if (!transactionData) {
+        alert("Row creation failed");
       }
 
-      await clearCache();
-
       await utils.table.invalidate();
+
+      // add the new transaction to the table states / data states
+
+      // for each column , add the given cell in tableData
+      console.log({ transactionData });
+      setData((prev) => {
+        // NOTE: this columns.length assertion should be made everywhere when adding a row
+        if (transactionData.createdCells && !!columns.length) {
+          const newRowdata = columns.reduce((acc, col, index) => {
+            acc[col.accessorKey] = {
+              value: "",
+              cellId: _.get(
+                transactionData,
+                [`createdCells`, index, "id"],
+                null,
+              )
+                ? _.get(transactionData, [`createdCells`, index, "id"])
+                : Math.random().toString(),
+            };
+            return acc;
+          }, {});
+          return [
+            ...prev,
+            { ...newRowdata, id: transactionData.createdRow.id },
+          ];
+        }
+        return prev;
+      });
     },
     onError: () => {
-      alert("Column creation failed");
+      alert("Row creation failed");
     },
   });
   return (
-    <tr
+    <div
       onClick={() => {
         addRowMutation.mutate({ tableId });
       }}
-      className="h-8 hover:cursor-pointer hover:bg-neutral-100"
+      className="hover:cursor-pointer hover:bg-neutral-100"
     >
-      <td className="border-b-[1px]">
-        <div className="pl-1">
-          <Plus size={18} strokeWidth={1}></Plus>
-        </div>
-      </td>
+      <div className="pl-1">
+        <Plus size={18} strokeWidth={1}></Plus>
+      </div>
       {new Array(columns.length).fill(null).map((item, index) => {
-        return (
-          <td
-            className={`border-y-[1px] ${index == columns.length - 1 ? "border-r-[1px]" : ""}`}
-            key={index}
-          ></td>
-        );
+        return <div key={index}></div>;
       })}
-    </tr>
+    </div>
   );
 }

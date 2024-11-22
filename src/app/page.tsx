@@ -30,9 +30,7 @@ export default async function Home() {
           </div>
         </div>
         <WorkspaceList></WorkspaceList>
-        <div>
-          <CreateWorksheet></CreateWorksheet>
-        </div>
+        <CreateWorksheet></CreateWorksheet>
       </main>
     </HydrateClient>
   );

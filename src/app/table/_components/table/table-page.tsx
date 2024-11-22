@@ -1,7 +1,8 @@
 import { api } from "@/trpc/server";
 import { type Column } from "@prisma/client";
 import { type TtableWithRowsAndColumns } from "@/validators/table";
-import { ReactTableVirtualized } from "./main";
+import { ReactTableVirtualizedInfinite } from "./main1";
+import { transformTableData } from "./helper/transformTableData";
 
 //TODO:Add correct lodash checks here ( too many nested selectors)
 
@@ -17,20 +18,21 @@ export default async function TablePage({
   if (typeof tableId == "string") {
     //fetch table data if there is tablename
 
-    const data = await api.table.getTableData({ tableId });
+    const data = await api.table.getTableData({ tableId, start: 0, size: 50 });
 
     //NOTE: even though all of them can be done in a single-step (some heavy dsa) , but it's more readable/debuggable this way
-    const extreactedColumns = extractColumns(data.data.tableData); // extracts colums from the TableData
+    const extreactedColumns = extractColumns(data.tableData); // extracts colums from the TableData
     const columnsMetadata = extractColumnMetadata(extreactedColumns); // converts the extracted colums to shape that tanstack table expects
-    const transformedTableData = transformTableData(data.data.tableData); //converts the extracted colums to shape that tanstack table expects
+    const transformedTableData = transformTableData(data.tableData); //converts the extracted colums to shape that tanstack table expects
 
     return (
-      <ReactTableVirtualized
+      <ReactTableVirtualizedInfinite
+        totalDBRowCount={data.totalDBRowCount}
         tableId={tableId}
         //TODO:can there be a better approach for this ?
         columnsData={columnsMetadata}
         tableData={transformedTableData}
-      ></ReactTableVirtualized>
+      ></ReactTableVirtualizedInfinite>
     );
   }
   return <div>Please create a table </div>;
@@ -47,42 +49,8 @@ function extractColumnMetadata(columns: Column[]) {
     .map((column) => ({
       accessorKey: column.name,
       header: column.name,
-      size: 400,
+      size: 200,
     }));
-}
-
-function transformTableData(
-  tableData: TtableWithRowsAndColumns,
-): Record<string, any>[] {
-  const { columns, rows } = tableData;
-
-  const columnMap: Record<string, string> = columns.reduce(
-    (acc, column) => {
-      acc[column.id] = column.name;
-      return acc;
-    },
-    {} as Record<string, string>,
-  );
-
-  const transformedRows = rows.map((row) => {
-    const rowObject: Record<string, any> = {
-      id: row.id, // Include row ID
-    };
-
-    row.cells.forEach((cell) => {
-      const columnName = columnMap[cell.columnId];
-      if (columnName) {
-        rowObject[columnName] = {
-          value: cell.value,
-          cellId: cell.id,
-        };
-      }
-    });
-
-    return rowObject;
-  });
-
-  return transformedRows;
 }
 
 //NOTE:use this if workspace data needed

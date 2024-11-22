@@ -29,20 +29,35 @@ export const tableRouter = createTRPCRouter({
     .input(
       z.object({
         tableId: z.string().min(1),
+        start: z.number(),
+        size: z.number(),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const tableData = await ctx.db.table.findFirst({
         where: { id: input.tableId },
         include: {
-          rows: { include: { cells: true } },
+          rows: {
+            include: { cells: true },
+            skip: input.start,
+            take: input.size,
+          },
           columns: true,
         },
       });
+
       if (!tableData) {
-        throw new Error(`Could'nt find table with id ${input.tableId}`);
+        throw new Error(`Could not find table with id ${input.tableId}`);
       }
-      return { data: { tableData } };
+
+      const totalDBRowCount = await ctx.db.row.count({
+        where: { tableId: input.tableId },
+      });
+
+      return {
+        tableData,
+        totalDBRowCount,
+      };
     }),
 
   addColumnToTable: protectedProcedure
@@ -55,9 +70,9 @@ export const tableRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const addedColumn = await ctx.db.$transaction(async (prisma) => {
+      const transactionData = await ctx.db.$transaction(async (prisma) => {
         // Create the new column
-        const column = await prisma.column.create({
+        const createdColumn = await prisma.column.create({
           data: {
             tableId: input.tableId,
             name: input.columnName,
@@ -66,29 +81,31 @@ export const tableRouter = createTRPCRouter({
           },
         });
 
-        if (!column) {
+        if (!createdColumn) {
           throw new Error(`Couldn't add column`);
         }
 
+        //create cells for rows
         const rows = await prisma.row.findMany({
           where: { tableId: input.tableId },
           select: { id: true },
         });
-
         if (rows.length > 0) {
           const cellsData = rows.map((row) => ({
             rowId: row.id,
-            columnId: column.id,
+            columnId: createdColumn.id,
             value: "",
           }));
 
-          await prisma.cell.createMany({ data: cellsData });
+          const createdCells = await prisma.cell.createManyAndReturn({
+            data: cellsData,
+          });
+          return { createdColumn, createdCells };
         }
-
-        return column;
+        return { createdColumn };
       });
 
-      return { data: { addedColumn } };
+      return { data: { transactionData } };
     }),
 
   addRowToTable: protectedProcedure
@@ -98,14 +115,14 @@ export const tableRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const addedRow = await ctx.db.$transaction(async (prisma) => {
-        const row = await prisma.row.create({
+      const transactionData = await ctx.db.$transaction(async (prisma) => {
+        const createdRow = await prisma.row.create({
           data: {
             tableId: input.tableId,
           },
         });
 
-        if (!row) {
+        if (!createdRow) {
           throw new Error(`Couldn't add row`);
         }
 
@@ -114,20 +131,24 @@ export const tableRouter = createTRPCRouter({
           select: { id: true },
         });
 
+        //this should be asserted
         if (columns.length > 0) {
           const cellsData = columns.map((column) => ({
-            rowId: row.id,
+            rowId: createdRow.id,
             columnId: column.id,
             value: "",
           }));
 
-          await prisma.cell.createMany({ data: cellsData });
+          const createdCells = await prisma.cell.createManyAndReturn({
+            data: cellsData,
+          });
+          return { createdRow, createdCells };
         }
 
-        return row;
+        return { createdRow };
       });
 
-      return { data: { addedRow } };
+      return { data: { transactionData } };
     }),
 
   updateCell: protectedProcedure
@@ -142,5 +163,60 @@ export const tableRouter = createTRPCRouter({
         where: { id: input.cellId },
         data: { value: input.value },
       });
+    }),
+
+  addBulkRows: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const transactionData = await ctx.db.$transaction(
+        async (prisma) => {
+          // Fetch the columns once, as they will be the same for all rows
+          const columns = await prisma.column.findMany({
+            where: { tableId: input.tableId },
+            select: { id: true },
+          });
+
+          if (columns.length === 0) {
+            throw new Error("No columns found for the given tableId");
+          }
+
+          const createdRows = [];
+
+          for (let i = 0; i < 1000; i++) {
+            // Create a row
+            const createdRow = await prisma.row.create({
+              data: {
+                tableId: input.tableId,
+              },
+            });
+
+            if (!createdRow) {
+              throw new Error(`Couldn't add row`);
+            }
+
+            createdRows.push(createdRow);
+
+            // Generate random values for cells
+            const cellsData = columns.map((column) => ({
+              rowId: createdRow.id,
+              columnId: column.id,
+              value: Math.random().toString(36).substring(2, 8), // Random string
+            }));
+
+            const batchCreatedCells = await prisma.cell.createMany({
+              data: cellsData,
+            });
+          }
+
+          return { createdRows };
+        },
+        { timeout: 10000 },
+      );
+
+      return { data: { transactionData } };
     }),
 });

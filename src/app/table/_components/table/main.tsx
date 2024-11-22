@@ -15,6 +15,7 @@ import { AddColumn } from "./column/add";
 import { AddRow } from "./row/add";
 import { api } from "@/trpc/react";
 import { type CellData } from "@/validators/table";
+import { AddRowsBulk } from "./bulk/rows";
 
 const defaultColumn: Partial<ColumnDef<Record<string, CellData>>> = {
   cell: ({ getValue, cell, table }) => {
@@ -61,6 +62,9 @@ export function ReactTableVirtualized({
 }) {
   const [columns, setColumns] = React.useState(columnsData);
   const [data, setData] = React.useState(tableData);
+  //  const [queuedCellUpdates, setQueuedCellUpdates] = React.useState<
+  //    Array<{ cellId: string; value: string }>
+  //  >([]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [hoveredRowIndex, setHoveredRowIndex] = React.useState<number | null>(
@@ -69,7 +73,6 @@ export function ReactTableVirtualized({
 
   const updateCellMutation = api.table.updateCell.useMutation();
 
-  //TODO: heavy lodashing here
   const updateData = (rowIndex: number, columnId: string, value: unknown) => {
     const rowData = data[rowIndex];
 
@@ -104,9 +107,31 @@ export function ReactTableVirtualized({
       }),
     );
 
-    // Update the cell in db
-    updateCellMutation.mutate({ cellId, value: value as string });
+    if (cellId.startsWith("temp-")) {
+      //      setQueuedCellUpdates((prev) => [
+      //        ...prev,
+      //        { cellId, value: value as string },
+      //      ]);
+    } else {
+      updateCellMutation.mutate({ cellId, value: value as string });
+    }
   };
+
+  //  React.useEffect(() => {
+  //    if (queuedCellUpdates.length === 0) return;
+  //
+  //    const updatesToProcess = queuedCellUpdates.filter(
+  //      (update) => !update.cellId.startsWith("temp-"),
+  //    );
+  //
+  //    updatesToProcess.forEach((update) => {
+  //      updateCellMutation.mutate({ cellId: update.cellId, value: update.value });
+  //    });
+  //
+  //    setQueuedCellUpdates((prev) =>
+  //      prev.filter((update) => update.cellId.startsWith("temp-")),
+  //    );
+  //  }, [data]);
 
   const table = useReactTable({
     data,
@@ -129,12 +154,15 @@ export function ReactTableVirtualized({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 5,
+    estimateSize: () => 32,
     overscan: 20,
   });
 
   return (
-    <div ref={parentRef} className="container bg-neutral-100">
+    <div
+      ref={parentRef}
+      className="container h-[30rem] overflow-auto bg-neutral-100"
+    >
       <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
         <table>
           <thead className="bg-[#f5f5f5]" style={{ height: "32px" }}>
@@ -164,6 +192,7 @@ export function ReactTableVirtualized({
                 })}
                 <th className="border-b-[1px] border-r-[1px] hover:cursor-pointer hover:bg-white">
                   <AddColumn
+                    setData={setData}
                     tableId={tableId}
                     columns={columns}
                     setColumns={setColumns}
@@ -206,7 +235,7 @@ export function ReactTableVirtualized({
                         {hoveredRowIndex == index ? (
                           <Checkbox className="size-[11px] rounded-[2px] border-neutral-400 shadow-none" />
                         ) : (
-                          index + 1
+                          +row!.id + 1
                         )}
                       </div>
 
@@ -242,6 +271,9 @@ export function ReactTableVirtualized({
               setData={setData}
               tableId={tableId}
             ></AddRow>
+            <AddRowsBulk
+              tableId={tableId}
+            ></AddRowsBulk>
           </tbody>
         </table>
       </div>

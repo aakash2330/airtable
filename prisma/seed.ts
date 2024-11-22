@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   async function a() {
-    const userId = "cm3qfaoew00008g22a0ayrh8r"; // Replace this with the user ID
+    const userId = "cm3t9mfob0000fnmdjiig4mo6"; // Replace this with the user ID
 
     // Step 1: Create a workspace
     const workspace = await prisma.workspace.create({
@@ -68,7 +68,7 @@ async function main() {
   }
 
   async function b() {
-    const userId = "cm3qfaoew00008g22a0ayrh8r"; // Replace this with the user ID
+    const userId = "cm3t9mfob0000fnmdjiig4mo6"; // Replace this with the user ID
 
     // Step 1: Create a workspace
     const workspace = await prisma.workspace.create({
