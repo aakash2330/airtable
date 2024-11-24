@@ -62,9 +62,9 @@ export function ReactTableVirtualized({
 }) {
   const [columns, setColumns] = React.useState(columnsData);
   const [data, setData] = React.useState(tableData);
-  //  const [queuedCellUpdates, setQueuedCellUpdates] = React.useState<
-  //    Array<{ cellId: string; value: string }>
-  //  >([]);
+  const [queuedCellUpdates, setQueuedCellUpdates] = React.useState<
+    Array<{ cellId: string; value: string }>
+  >([]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [hoveredRowIndex, setHoveredRowIndex] = React.useState<number | null>(
@@ -108,30 +108,30 @@ export function ReactTableVirtualized({
     );
 
     if (cellId.startsWith("temp-")) {
-      //      setQueuedCellUpdates((prev) => [
-      //        ...prev,
-      //        { cellId, value: value as string },
-      //      ]);
+      setQueuedCellUpdates((prev) => [
+        ...prev,
+        { cellId, value: value as string },
+      ]);
     } else {
       updateCellMutation.mutate({ cellId, value: value as string });
     }
   };
 
-  //  React.useEffect(() => {
-  //    if (queuedCellUpdates.length === 0) return;
-  //
-  //    const updatesToProcess = queuedCellUpdates.filter(
-  //      (update) => !update.cellId.startsWith("temp-"),
-  //    );
-  //
-  //    updatesToProcess.forEach((update) => {
-  //      updateCellMutation.mutate({ cellId: update.cellId, value: update.value });
-  //    });
-  //
-  //    setQueuedCellUpdates((prev) =>
-  //      prev.filter((update) => update.cellId.startsWith("temp-")),
-  //    );
-  //  }, [data]);
+  React.useEffect(() => {
+    if (queuedCellUpdates.length === 0) return;
+
+    const updatesToProcess = queuedCellUpdates.filter(
+      (update) => !update.cellId.startsWith("temp-"),
+    );
+
+    updatesToProcess.forEach((update) => {
+      updateCellMutation.mutate({ cellId: update.cellId, value: update.value });
+    });
+
+    setQueuedCellUpdates((prev) =>
+      prev.filter((update) => update.cellId.startsWith("temp-")),
+    );
+  }, [data]);
 
   const table = useReactTable({
     data,
@@ -271,9 +271,7 @@ export function ReactTableVirtualized({
               setData={setData}
               tableId={tableId}
             ></AddRow>
-            <AddRowsBulk
-              tableId={tableId}
-            ></AddRowsBulk>
+            <AddRowsBulk tableId={tableId}></AddRowsBulk>
           </tbody>
         </table>
       </div>

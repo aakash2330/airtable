@@ -16,6 +16,10 @@ import _ from "lodash";
 
 //NOTE:Turn to optimistic updates so that the table functions are snappier
 
+function generateTemporaryId() {
+  return "temp-" + Math.random().toString(36).substr(2, 9);
+}
+
 export function AddColumn({
   columns,
   tableId,
@@ -31,47 +35,81 @@ export function AddColumn({
 }) {
   const utils = api.useUtils();
   const [columnName, setColumnName] = useState("");
+  const [tempColumnName, setTempColumnName] = useState("");
   const addColumnMutation = api.table.addColumnToTable.useMutation({
-    onSuccess: async ({ data: { transactionData } }) => {
-      if (!transactionData) {
-        alert("column creation failed");
-      }
-      await utils.table.invalidate();
-
-      // add the new transaction to the table states / data states
-
-      //add new column to state
+    onMutate: async () => {
       setColumns((prev) => {
         const prevCopy = [...prev];
         //insert at second last position cause last column is addColumn one
         prevCopy.splice(prevCopy.length - 1, 0, {
-          accessorKey: transactionData.createdColumn.name,
-          header: transactionData.createdColumn.name,
+          accessorKey: columnName,
+          header: columnName,
           size: 200,
         });
         return prevCopy;
       });
 
-      //add newlyCreated Cells to state
+      console.log("setting new Data");
       setData((prev) => {
         const updatedRows = prev.map((row, index) => {
           return {
             ...row,
-            [transactionData.createdColumn.name]: {
+            [columnName]: {
               value: "",
-              cellId: _.get(
-                transactionData,
-                [`createdCells`, index, "id"],
-                null,
-              )
-                ? _.get(transactionData, [`createdCells`, index, "id"])!
-                : Math.random().toString(),
+              cellId: generateTemporaryId(),
             },
           };
         });
-        console.log({ updatedRows });
         return updatedRows;
       });
+    },
+    onSuccess: async ({ data: { transactionData } }) => {
+      await utils.table.invalidate();
+      // add the new transaction to the table states / data states
+
+      //add new column to state
+      const createdColumnName = transactionData.createdColumn.name;
+
+      // Find the index of the temporary column (second last position)
+      const tempColumnIndex = columns.length - 1; // Assuming last column is AddColumn
+
+      // Replace the temporary column with the actual column
+      setColumns((prevColumns) => {
+        const prevCopy = [...prevColumns];
+        prevCopy.splice(tempColumnIndex, 1, {
+          accessorKey: createdColumnName,
+          header: createdColumnName,
+          size: 200,
+        });
+        return prevCopy;
+      });
+
+      setData((prevData) => {
+        const updatedRows = prevData.map((row, index) => {
+          const tempCell = row[tempColumnName];
+          const actualCellId = _.get(
+            transactionData,
+            [`createdCells`, index, "id"],
+            null,
+          );
+
+          return {
+            ...row,
+            [createdColumnName]: {
+              value: tempCell?.value ?? "",
+              cellId: actualCellId ? actualCellId : generateTemporaryId(),
+            },
+            // Remove the temporary column
+            ...(tempColumnName in row ? { [tempColumnName]: undefined } : {}),
+          };
+        });
+
+        // Remove any undefined keys resulting from temporary column removal
+        return updatedRows.map((row) => _.omit(row, [tempColumnName]));
+      });
+
+      // Optionally, trigger a refetch to ensure data consistency
+      await utils.table.invalidate();
     },
     onError: (error) => {
       console.log({ error });

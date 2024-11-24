@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { sleep } from "@/lib/utils";
 
 //NOTE: For the mutations , check whether the user is an owner or not , fine for now
 
@@ -13,14 +14,56 @@ export const tableRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const createdTable = await ctx.db.table.create({
+      const table = await ctx.db.table.create({
         data: {
           name: input.tableName,
           workspaceId: input.workspaceId,
+          columns: {
+            create: [
+              { name: "name", dataType: "string", position: 1 },
+              { name: "age", dataType: "number", position: 2 },
+            ],
+          },
         },
+        include: { columns: true },
       });
-      if (!createdTable) {
+      if (!table) {
         throw new Error("Table Creation Error");
+      }
+
+      // Get the created column IDs
+      const [column1, column2] = table.columns;
+
+      console.log({ column1, column2 });
+
+      // Step 3: Create rows and cells using the column IDs
+
+      if (column1 && column2) {
+        const row1 = await ctx.db.row.create({
+          data: {
+            tableId: table.id,
+            cells: {
+              create: [
+                { value: "john", columnId: column1.id },
+                { value: "23", columnId: column2.id },
+              ],
+            },
+          },
+        });
+
+        const row2 = await ctx.db.row.create({
+          data: {
+            tableId: table.id,
+            cells: {
+              create: [
+                { value: "doe", columnId: column1.id },
+                { value: "26", columnId: column2.id },
+              ],
+            },
+          },
+        });
+
+        console.log(`Created Rows: ${row1.id}, ${row2.id}`);
       }
       return { data: { success: true } };
     }),
@@ -70,6 +113,7 @@ export const tableRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await sleep(3000);
       const transactionData = await ctx.db.$transaction(async (prisma) => {
         // Create the new column
         const createdColumn = await prisma.column.create({
@@ -186,7 +230,7 @@ export const tableRouter = createTRPCRouter({
 
           const createdRows = [];
 
-          for (let i = 0; i < 10000; i++) {
+          for (let i = 0; i < 1000; i++) {
             // Create a row
             const createdRow = await prisma.row.create({
               data: {
@@ -214,7 +258,7 @@ export const tableRouter = createTRPCRouter({
 
           return { createdRows };
         },
-        { timeout: 10000 },
+        { timeout: 1000000 },
       );
 
       return { data: { transactionData } };

@@ -70,7 +70,9 @@ export function ReactTableVirtualizedInfinite({
 }) {
   //we need a reference to the scrolling element for logic down below
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
-
+  const [queuedCellUpdates, setQueuedCellUpdates] = React.useState<
+    Array<{ cellId: string; value: string }>
+  >([]);
   const [hoveredRowIndex, setHoveredRowIndex] = React.useState<number | null>();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columns, setColumns] = React.useState([
@@ -183,30 +185,32 @@ export function ReactTableVirtualizedInfinite({
     const cellId = cellData.cellId;
 
     if (cellId.startsWith("temp-")) {
-      //      setQueuedCellUpdates((prev) => [
-      //        ...prev,
-      //        { cellId, value: value as string },
-      //      ]);
+      setQueuedCellUpdates((prev) => [
+        ...prev,
+        { cellId, value: value as string },
+      ]);
     } else {
       updateCellMutation.mutate({ cellId, value: value as string });
     }
   };
 
-  //  React.useEffect(() => {
-  //    if (queuedCellUpdates.length === 0) return;
-  //
-  //    const updatesToProcess = queuedCellUpdates.filter(
-  //      (update) => !update.cellId.startsWith("temp-"),
-  //    );
-  //
-  //    updatesToProcess.forEach((update) => {
-  //      updateCellMutation.mutate({ cellId: update.cellId, value: update.value });
-  //    });
-  //
-  //    setQueuedCellUpdates((prev) =>
-  //      prev.filter((update) => update.cellId.startsWith("temp-")),
-  //    );
-  //  }, [data]);
+  React.useEffect(() => {
+    console.log("asdasdasd");
+    if (queuedCellUpdates.length === 0) return;
+    console.log("mutating queued");
+
+    const updatesToProcess = queuedCellUpdates.filter(
+      (update) => !update.cellId.startsWith("temp-"),
+    );
+
+    updatesToProcess.forEach((update) => {
+      updateCellMutation.mutate({ cellId: update.cellId, value: update.value });
+    });
+
+    setQueuedCellUpdates((prev) =>
+      prev.filter((update) => update.cellId.startsWith("temp-")),
+    );
+  }, [data]);
 
   //a check on mount and after a fetch to see if the table is already scrolled to the bottom and immediately needs to fetch more data
   React.useEffect(() => {
@@ -293,7 +297,7 @@ export function ReactTableVirtualizedInfinite({
                 {headerGroup.headers.map((header) => {
                   return (
                     <th
-                      className="flex items-center justify-start border-r-[1px] px-2 py-0 text-left text-[#1d1f25]"
+                      className="flex items-center justify-start border-r-[1px] px-2 py-0 text-left text-[13px] font-normal text-[#1d1f25]"
                       key={header.id}
                       style={{
                         display: "flex",
