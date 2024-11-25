@@ -14,6 +14,7 @@ export function ToolTipMain(item: {
   return (
     <Tooltip>
       <TooltipTrigger
+        asChild
         className={cn("flex items-center justify-center", item.className)}
       >
         {item.title}

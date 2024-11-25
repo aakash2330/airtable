@@ -4,6 +4,11 @@ import { type ColumnDef } from "@tanstack/react-table";
 import _ from "lodash";
 import { Plus } from "lucide-react";
 
+// Helper function to generate a temporary ID
+function generateTemporaryId() {
+  return "temp-" + Math.random().toString(36).substr(2, 9);
+}
+
 export function AddRow({
   columns,
   setData,
@@ -15,50 +20,83 @@ export function AddRow({
 }) {
   const utils = api.useUtils();
   const addRowMutation = api.table.addRowToTable.useMutation({
-    onSuccess: async ({ data: { transactionData } }) => {
-      if (!transactionData) {
-        alert("Row creation failed");
-      }
-
-      await utils.table.invalidate();
-
-      // add the new transaction to the table states / data states
-
-      // for each column , add the given cell in tableData
-      console.log({ transactionData });
+    onMutate: async () => {
+      // Create a temporary row with placeholder data
+      const tempRowId = generateTemporaryId();
       setData((prev) => {
-        // NOTE: this columns.length assertion should be made everywhere when adding a row
-        if (transactionData.createdCells && !!columns.length) {
-          const newRowdata = columns.reduce((acc, col, index) => {
-            acc[col.accessorKey] = {
-              value: "",
-              cellId: _.get(
-                transactionData,
-                [`createdCells`, index, "id"],
-                null,
-              )
-                ? _.get(transactionData, [`createdCells`, index, "id"])
-                : Math.random().toString(),
-            };
+        const tempRow = columns.reduce(
+          (acc, col) => {
+            if (col.accessorKey != "index" && col.accessorKey != "addColumn") {
+              acc[col.accessorKey] = {
+                value: "",
+                cellId: generateTemporaryId(),
+              };
+            }
             return acc;
-          }, {});
-          return [
-            ...prev,
-            { ...newRowdata, id: transactionData.createdRow.id },
-          ];
-        }
-        return prev;
+          },
+          {} as Record<string, CellData>,
+        );
+        return [...prev, { id: tempRowId, ...tempRow }];
       });
+
+      return { tempRowId }; // Context for rollback
     },
-    onError: () => {
+    onSuccess: async ({ data: { transactionData } }, variables, context) => {
+      const { tempRowId } = context;
+      console.log("updating new rows");
+
+      setData((prev) => {
+        const updatedRows = prev.map((row) => {
+          console.log(transactionData.createdCells);
+          return row.id === tempRowId
+            ? {
+                ...row,
+                id: transactionData.createdRow.id,
+                ...columns.reduce(
+                  (acc, col, index) => {
+                    if (
+                      col.accessorKey != "index" &&
+                      col.accessorKey != "addColumn"
+                    ) {
+                      acc[col.accessorKey] = {
+                        value: "",
+                        cellId: _.get(
+                          transactionData,
+                          //HACK: how does index-1 solves this issue i have not idea
+                          [`createdCells`, index - 1, "id"],
+                          "temp-id",
+                        ),
+                      };
+                    }
+                    return acc;
+                  },
+                  {} as Record<string, CellData>,
+                ),
+              }
+            : row;
+        });
+        console.log({ updatedRows });
+        return updatedRows;
+      });
+
+      // Optionally refetch table data to ensure consistency
+      await utils.table.invalidate();
+    },
+    onError: (error, variables, context) => {
+      // Rollback on failure
+      const { tempRowId } = context;
+      setData((prev) => prev.filter((row) => row.id !== tempRowId));
       alert("Row creation failed");
     },
   });
+
+  async function addNewRow() {
+    addRowMutation.mutate({ tableId });
+  }
+
   return (
     <div
-      onClick={() => {
-        addRowMutation.mutate({ tableId });
-      }}
+      onClick={addNewRow}
       className="hover:cursor-pointer hover:bg-neutral-100"
     >
       <div className="pl-1">

@@ -56,7 +56,8 @@
     "superjson": "^2.2.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.3"
+    "zod": "^3.23.3",
+    "zustand": "^5.0.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.2.0",

@@ -18,7 +18,11 @@ export default async function TablePage({
   if (typeof tableId == "string") {
     //fetch table data if there is tablename
 
-    const data = await api.table.getTableData({ tableId, start: 0, size: 50 });
+    const data = await api.table.getTableData({
+      tableId,
+      start: 0,
+      size: 50,
+    });
 
     //NOTE: even though all of them can be done in a single-step (some heavy dsa) , but it's more readable/debuggable this way
     const extreactedColumns = extractColumns(data.tableData); // extracts colums from the TableData
@@ -27,11 +31,11 @@ export default async function TablePage({
 
     return (
       <ReactTableVirtualizedInfinite
-        totalDBRowCount={data.totalDBRowCount}
+        initialRowCount={data.totalDBRowCount}
         tableId={tableId}
         //TODO:can there be a better approach for this ?
         columnsData={columnsMetadata}
-        tableData={transformedTableData}
+        initialTableData={transformedTableData}
       ></ReactTableVirtualizedInfinite>
     );
   }

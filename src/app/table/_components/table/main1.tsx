@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useDebounce } from "@uidotdev/usehooks";
 import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   type OnChangeFn,
   type SortingState,
@@ -20,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AddColumn } from "./column/add";
 import { AddRowsBulk } from "./bulk/rows";
 import { AddRow } from "./row/add";
+import { useSearchInputStore } from "@/store/search";
 
 const fetchSize = 50;
 
@@ -58,22 +61,26 @@ const defaultColumn: Partial<ColumnDef<Record<string, CellData>>> = {
 };
 
 export function ReactTableVirtualizedInfinite({
+  initialRowCount,
   tableId,
-  totalDBRowCount,
-  tableData,
+  initialTableData,
   columnsData,
 }: {
-  tableData: Record<string, CellData>[];
+  initialRowCount: number;
+  initialTableData: Record<string, CellData>[];
   columnsData: Array<ColumnDef<Record<string, CellData>>>;
-  totalDBRowCount: number;
   tableId: string;
 }) {
   //we need a reference to the scrolling element for logic down below
+  const utils = api.useUtils();
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
-  const [queuedCellUpdates, setQueuedCellUpdates] = React.useState<
-    Array<{ cellId: string; value: string }>
-  >([]);
+  const filterText = useSearchInputStore((state) => state.searchInput);
+  const debouncedFilterText = useDebounce(filterText, 300);
+  // const [queuedCellUpdates, setQueuedCellUpdates] = React.useState<
+  //   Array<{ cellId: string; value: string }>
+  // >([]);
   const [hoveredRowIndex, setHoveredRowIndex] = React.useState<number | null>();
+  const [totalDBRowCount, setTotalDBRowCount] = useState(initialRowCount);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columns, setColumns] = React.useState([
     {
@@ -116,20 +123,22 @@ export function ReactTableVirtualizedInfinite({
   const { data, fetchNextPage, isFetching, isLoading } = useInfiniteQuery<
     Record<string, CellData>[]
   >({
-    queryKey: [],
+    queryKey: [debouncedFilterText],
     queryFn: async ({ pageParam = 0 }) => {
       const start = (pageParam as number) * fetchSize;
       const fetchedData = await getTableDataMutation.mutateAsync({
         start,
         size: fetchSize,
         tableId,
+        filters: { search: debouncedFilterText },
       });
       const transformedData = transformTableData(fetchedData.tableData);
+      setTotalDBRowCount(fetchedData.totalDBRowCount);
       return transformedData;
     },
     initialPageParam: 0,
     initialData: {
-      pages: [tableData],
+      pages: [initialTableData],
       pageParams: [0],
     },
     getNextPageParam: (_lastGroup, groups) => groups.length,
@@ -139,6 +148,25 @@ export function ReactTableVirtualizedInfinite({
 
   //flatten the array of arrays from the useInfiniteQuery hook
   const [flatData, setFlatData] = useState<Record<string, CellData>[]>([]);
+  const filteredData = useMemo(() => {
+    return flatData.filter((row) =>
+      Object.values(row).some((cell) => {
+        if (cell.value == "" && debouncedFilterText.length < 1) {
+          return cell;
+        }
+        if (cell.value) {
+          return cell.value
+            .toLowerCase()
+            .includes(debouncedFilterText.toLowerCase());
+        }
+      }),
+    );
+  }, [flatData, debouncedFilterText]);
+
+  useEffect(() => {
+    console.log({ filteredData });
+    console.log({ flatData });
+  }, [filteredData, flatData]);
 
   useEffect(() => {
     setFlatData(data?.pages?.flat() ?? []);
@@ -185,40 +213,41 @@ export function ReactTableVirtualizedInfinite({
     const cellId = cellData.cellId;
 
     if (cellId.startsWith("temp-")) {
-      setQueuedCellUpdates((prev) => [
-        ...prev,
-        { cellId, value: value as string },
-      ]);
+      // setQueuedCellUpdates((prev) => [
+      //   ...prev,
+      //   { cellId, value: value as string },
+      // ]);
     } else {
       updateCellMutation.mutate({ cellId, value: value as string });
     }
   };
 
-  React.useEffect(() => {
-    console.log("asdasdasd");
-    if (queuedCellUpdates.length === 0) return;
-    console.log("mutating queued");
+  //NOTE:Fix the depths issue here
 
-    const updatesToProcess = queuedCellUpdates.filter(
-      (update) => !update.cellId.startsWith("temp-"),
-    );
+  // React.useEffect(() => {
+  //   if (queuedCellUpdates.length === 0) return;
 
-    updatesToProcess.forEach((update) => {
-      updateCellMutation.mutate({ cellId: update.cellId, value: update.value });
-    });
+  //   const updatesToProcess = queuedCellUpdates.filter(
+  //     (update) => !update.cellId.startsWith("temp-"),
+  //   );
 
-    setQueuedCellUpdates((prev) =>
-      prev.filter((update) => update.cellId.startsWith("temp-")),
-    );
-  }, [data]);
+  //   updatesToProcess.forEach((update) => {
+  //     updateCellMutation.mutate({ cellId: update.cellId, value: update.value });
+  //   });
+
+  //   setQueuedCellUpdates((prev) =>
+  //     prev.filter((update) => update.cellId.startsWith("temp-")),
+  //   );
+  // }, [data, queuedCellUpdates, updateCellMutation]);
 
   //a check on mount and after a fetch to see if the table is already scrolled to the bottom and immediately needs to fetch more data
+
   React.useEffect(() => {
     fetchMoreOnBottomReached(tableContainerRef.current);
   }, [fetchMoreOnBottomReached]);
 
   const table = useReactTable({
-    data: flatData,
+    data: filteredData,
     columns,
     defaultColumn,
     state: {
@@ -226,6 +255,7 @@ export function ReactTableVirtualizedInfinite({
     },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     manualSorting: true,
     debugTable: true,
     meta: {
@@ -268,7 +298,7 @@ export function ReactTableVirtualizedInfinite({
   return (
     <div>
       <div className="flex text-xs">
-        ({flatData.length} of {totalDBRowCount} rows fetched)
+        ({filteredData.length} of {totalDBRowCount} rows fetched)
         <AddRowsBulk tableId={tableId}></AddRowsBulk>
       </div>
       <div

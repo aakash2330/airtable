@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { sleep } from "@/lib/utils";
+import { faker } from "@faker-js/faker";
 
 //NOTE: For the mutations , check whether the user is an owner or not , fine for now
 
@@ -74,6 +75,11 @@ export const tableRouter = createTRPCRouter({
         tableId: z.string().min(1),
         start: z.number(),
         size: z.number(),
+        filters: z
+          .object({
+            search: z.string().optional(),
+          })
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -81,7 +87,21 @@ export const tableRouter = createTRPCRouter({
         where: { id: input.tableId },
         include: {
           rows: {
-            include: { cells: true },
+            where: input.filters?.search
+              ? {
+                  cells: {
+                    some: {
+                      value: {
+                        contains: input.filters?.search ?? "",
+                        mode: "insensitive",
+                      },
+                    },
+                  },
+                }
+              : undefined,
+            include: {
+              cells: true,
+            },
             skip: input.start,
             take: input.size,
           },
@@ -94,9 +114,21 @@ export const tableRouter = createTRPCRouter({
       }
 
       const totalDBRowCount = await ctx.db.row.count({
-        where: { tableId: input.tableId },
+        where: {
+          tableId: input.tableId,
+          cells: {
+            some: {
+              value: {
+                contains: input.filters?.search ?? "",
+                mode: "insensitive",
+              },
+            },
+          },
+        },
       });
 
+      console.log({ searchInput: input.filters?.search });
+      console.log({ totalDBRowCount });
       return {
         tableData,
         totalDBRowCount,
@@ -113,7 +145,6 @@ export const tableRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await sleep(3000);
       const transactionData = await ctx.db.$transaction(async (prisma) => {
         // Create the new column
         const createdColumn = await prisma.column.create({
@@ -244,11 +275,10 @@ export const tableRouter = createTRPCRouter({
 
             createdRows.push(createdRow);
 
-            // Generate random values for cells
             const cellsData = columns.map((column) => ({
               rowId: createdRow.id,
               columnId: column.id,
-              value: Math.random().toString(36).substring(2, 8), // Random string
+              value: faker.person.fullName(),
             }));
 
             const batchCreatedCells = await prisma.cell.createMany({

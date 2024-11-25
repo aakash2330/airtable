@@ -16,7 +16,7 @@ export function OptionsMenuDropdown({
       <DropdownMenuTrigger className="flex h-7 items-center justify-center gap-1 rounded-sm px-2 text-[13px] font-light hover:bg-[#0000000D]">
         {title}
       </DropdownMenuTrigger>
-      <DropdownMenuContent>{content}</DropdownMenuContent>
+      <DropdownMenuContent className="p-0 rounded-none">{content}</DropdownMenuContent>
     </DropdownMenu>
   );
 }

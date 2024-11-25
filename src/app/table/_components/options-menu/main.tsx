@@ -1,11 +1,20 @@
+"use client";
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { optionsMenuData } from "./options";
 import { ToolTipMain } from "@/components/tooltip/main";
-import { Command, Search } from "lucide-react";
+import { Command, Search, X } from "lucide-react";
+import { OptionsMenuDropdown } from "./dropdown/main";
+import { Input } from "@/components/ui/input";
+import { useSearchInputStore } from "@/store/search";
 
 export function OptionsMenu() {
+  const changeSearchInput = useSearchInputStore(
+    (state) => state.changeSearchInput,
+  );
+  console.log({ changeSearchInput });
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={500}>
       <div className="flex h-10 items-center justify-between gap-3 p-2">
         <div className="flex items-center justify-between gap-3">
           {optionsMenuData.map((item) => {
@@ -24,7 +33,20 @@ export function OptionsMenu() {
           side="left"
           title={
             <div className="flex items-center justify-center gap-1">
-              <Search strokeWidth={1.3} size={16}></Search>
+              <OptionsMenuDropdown
+                title={<Search strokeWidth={1.3} size={16}></Search>}
+                content={
+                  <div className="flex items-center justify-center">
+                    <Input
+                      onChange={(e) => {
+                        changeSearchInput(e.target.value);
+                      }}
+                      className="rounded-none border-none"
+                    ></Input>
+                    <X strokeWidth={1} size={18}></X>
+                  </div>
+                }
+              ></OptionsMenuDropdown>
             </div>
           }
           content={
