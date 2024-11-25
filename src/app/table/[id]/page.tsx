@@ -10,10 +10,7 @@ export default async function Page({
 }) {
   return (
     //TODO:parse the query-params here
-    <Suspense
-      key={Math.random()}
-      fallback={<p>Loading Table...</p>}
-    >
+    <Suspense fallback={<p>Loading Table...</p>}>
       <TablePage searchParams={searchParams}></TablePage>
     </Suspense>
   );

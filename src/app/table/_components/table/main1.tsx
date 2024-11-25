@@ -133,7 +133,7 @@ export function ReactTableVirtualizedInfinite({
         filters: { search: debouncedFilterText },
       });
       const transformedData = transformTableData(fetchedData.tableData);
-      setTotalDBRowCount(fetchedData.totalDBRowCount);
+      setTotalDBRowCount(Infinity);
       return transformedData;
     },
     initialPageParam: 0,
@@ -298,7 +298,7 @@ export function ReactTableVirtualizedInfinite({
   return (
     <div>
       <div className="flex text-xs">
-        ({filteredData.length} of {totalDBRowCount} rows fetched)
+        ({filteredData.length} rows fetched)
         <AddRowsBulk tableId={tableId}></AddRowsBulk>
       </div>
       <div

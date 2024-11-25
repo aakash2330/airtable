@@ -24,6 +24,8 @@ export default async function TablePage({
       size: 50,
     });
 
+    console.log({ data: data.tableData });
+
     //NOTE: even though all of them can be done in a single-step (some heavy dsa) , but it's more readable/debuggable this way
     const extreactedColumns = extractColumns(data.tableData); // extracts colums from the TableData
     const columnsMetadata = extractColumnMetadata(extreactedColumns); // converts the extracted colums to shape that tanstack table expects
@@ -31,6 +33,7 @@ export default async function TablePage({
 
     return (
       <ReactTableVirtualizedInfinite
+        key={Math.random()}
         initialRowCount={data.totalDBRowCount}
         tableId={tableId}
         //TODO:can there be a better approach for this ?
